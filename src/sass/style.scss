@@ -1,0 +1,39 @@
+// Variáveis
+$primary-color: #3498db;
+$secondary-color: #2ecc71;
+
+// Reset básico
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// Body
+body {
+  font-family: Arial, sans-serif;
+  background-color: $secondary-color;
+  color: #fff;
+  padding: 20px;
+}
+
+// Cabeçalho
+h1 {
+  color: $primary-color;
+  font-size: 2em;
+  margin-bottom: 10px;
+}
+
+// Botão
+.button {
+  background-color: $primary-color;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: darken($primary-color, 10%);
+  }
+}
