@@ -1,0 +1,22 @@
+// Responsividade usando as variáveis de breakpoint
+
+@media screen and @breakpoint-tablet {
+  .container {
+    max-width: 80%;
+  }
+
+  .products {
+    grid-template-columns: ~"repeat(2, 48.5%)";
+    column-gap: 3%;
+  }
+}
+
+@media screen and @breakpoint-mobile {
+  .products {
+    display: block;
+  }
+
+  .product-item  {
+    margin-bottom: #spacing[product-item-margin-bottom-mobile];
+  }
+}

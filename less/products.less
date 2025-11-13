@@ -1,0 +1,40 @@
+.products {
+  margin-top: @product-grid-margin-top;
+  display: grid;
+  // usando escaping para o template de colunas
+  grid-template-columns: ~"repeat(3, 32.66%)";
+  column-gap: @product-grid-gap-column;
+  row-gap: @product-grid-gap-row;
+  width: 100%;
+}
+
+.product-item {
+  img {
+    width: 100%;
+    border-radius: @border-radius-product-image;
+  }
+
+  h4 {
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 14px;
+  }
+}
+
+.product-button {
+  display: block;
+  background-color: #colors[product-btn-bg];
+  color: #colors[text-light];
+  text-align: center;
+  padding: #spacing[product-button-padding-y] 0;
+  border-radius: @border-radius-button;
+  margin-top: 8px;
+  text-decoration: none;
+
+  &:hover {
+    background-color: #colors[product-btn-bg-hover];
+  }
+}
