@@ -5,6 +5,13 @@ describe('Agenda de Contatos - CRUD', () => {
     cy.get('input[type="tel"]').clear().type(telefone)
   }
 
+  const cardDoContato = (nome) =>
+    cy
+      .contains(nome)
+      .parents()
+      .filter(':has(.edit):has(.delete)')
+      .first()
+
   beforeEach(() => {
     cy.visit('/')
   })
@@ -22,7 +29,9 @@ describe('Agenda de Contatos - CRUD', () => {
     cy.contains(email).should('be.visible')
 
     // Limpeza do dado criado para não poluir o ambiente compartilhado.
-    cy.get('.delete').last().click()
+    cardDoContato(nome).within(() => {
+      cy.get('.delete').click()
+    })
     cy.contains(nome).should('not.exist')
   })
 
@@ -37,13 +46,21 @@ describe('Agenda de Contatos - CRUD', () => {
     cy.get('.adicionar').click()
     cy.contains(nomeOriginal).should('be.visible')
 
-    cy.get('.edit').last().click()
+    cardDoContato(nomeOriginal).within(() => {
+      cy.get('.edit').click()
+    })
+
     cy.get('input[type="text"]').first().clear().type(nomeEditado)
 
     cy.get('body').then(($body) => {
       if ($body.find('.alterar').length) {
         cy.get('.alterar').click()
-      } else if ($body.find('button').filter((_, el) => /Salvar|Alterar/.test(el.innerText)).length) {
+      } else if (
+        $body
+          .find('button')
+          .filter((_, elemento) => /Salvar|Alterar/.test(elemento.innerText))
+          .length
+      ) {
         cy.contains('button', /Salvar|Alterar/).click()
       } else {
         cy.get('button[type="submit"]').first().click()
@@ -54,7 +71,9 @@ describe('Agenda de Contatos - CRUD', () => {
     cy.contains(nomeOriginal).should('not.exist')
 
     // Limpeza do dado criado.
-    cy.get('.delete').last().click()
+    cardDoContato(nomeEditado).within(() => {
+      cy.get('.delete').click()
+    })
     cy.contains(nomeEditado).should('not.exist')
   })
 
@@ -68,7 +87,9 @@ describe('Agenda de Contatos - CRUD', () => {
     cy.get('.adicionar').click()
     cy.contains(nome).should('be.visible')
 
-    cy.get('.delete').last().click()
+    cardDoContato(nome).within(() => {
+      cy.get('.delete').click()
+    })
 
     cy.contains(nome).should('not.exist')
   })
