@@ -1,0 +1,13 @@
+{
+  "name": "exercicio-cypress-ebac",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "test": "cypress run"
+  },
+  "devDependencies": {
+    "cypress": "15.21.1"
+  }
+}
