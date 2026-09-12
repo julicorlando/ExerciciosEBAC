@@ -1,0 +1,41 @@
+name: Módulo 16 - Token Authentication
+
+on:
+  push:
+    branches:
+      - modulo16-token-authentication
+  pull_request:
+    paths:
+      - "modulo13_bookstore/**"
+      - ".github/workflows/modulo16-token-auth.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: modulo13_bookstore
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Poetry
+        run: pip install poetry
+
+      - name: Instalar dependências
+        run: poetry install --no-interaction
+
+      - name: Verificar migrations pendentes
+        run: poetry run python manage.py makemigrations --check --dry-run
+
+      - name: Django check
+        run: poetry run python manage.py check
+
+      - name: Executar testes
+        run: poetry run python manage.py test

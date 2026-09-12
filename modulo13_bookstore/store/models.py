@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -40,6 +41,13 @@ class Order(models.Model):
         PAID = "paid", "Pago"
         CANCELLED = "cancelled", "Cancelado"
 
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="orders",
+        null=True,
+        blank=True,
+    )
     customer_name = models.CharField(max_length=120)
     customer_email = models.EmailField()
     products = models.ManyToManyField(Product, related_name="orders")
