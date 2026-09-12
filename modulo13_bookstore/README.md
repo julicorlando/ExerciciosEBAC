@@ -1,73 +1,140 @@
-# Bookstore - EBAC - Dockerfile
+# Bookstore - EBAC - Docker Compose com PostgreSQL
 
-Projeto desenvolvido em continuidade às atividades de serializers, ViewSets, paginação e Token Authentication do Bookstore com Django REST Framework.
+Projeto desenvolvido em continuidade às atividades anteriores do Bookstore com Django REST Framework.
 
 ## Objetivo desta atividade
 
-Criar um `Dockerfile` para empacotar e executar o projeto Bookstore em um container Docker, conforme os conceitos estudados de imagem, container, host, `build` e `run`.
+Adicionar Docker Compose ao projeto e configurar a aplicação Django para utilizar PostgreSQL em container separado.
 
-## Dockerfile
+## Serviços
 
-O arquivo está em:
+O arquivo `docker-compose.yml` define dois serviços:
+
+- `web`: aplicação Django construída a partir do `Dockerfile`;
+- `db`: banco PostgreSQL 16.
+
+O serviço `web` aguarda o PostgreSQL ficar saudável, executa as migrations e inicia o Django na porta `8000`.
+
+## Banco de dados
+
+Quando a variável `POSTGRES_HOST` está definida, o Django utiliza PostgreSQL.
+
+Variáveis utilizadas:
 
 ```text
-modulo13_bookstore/Dockerfile
+POSTGRES_DB=bookstore
+POSTGRES_USER=bookstore
+POSTGRES_PASSWORD=bookstore
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
 ```
 
-A imagem utiliza:
+Para execução local sem Docker Compose, caso `POSTGRES_HOST` não esteja definida, o projeto continua utilizando SQLite.
 
-- `python:3.12-slim` como imagem base;
-- Poetry para instalar as dependências do projeto;
-- `/app` como diretório de trabalho;
-- porta `8000` para a aplicação Django;
-- `python manage.py runserver 0.0.0.0:8000` como comando de execução.
+## Dependência PostgreSQL
 
-Também foi criado um `.dockerignore` para evitar o envio de arquivos desnecessários para o contexto do build.
+Foi adicionado ao Poetry o driver:
 
-## Construir a imagem
+```text
+psycopg[binary]
+```
 
-A partir da pasta `modulo13_bookstore`:
+## Subir a aplicação
+
+Entre na pasta do projeto:
 
 ```bash
-docker build -t bookstore-ebac:modulo17 .
+cd modulo13_bookstore
 ```
 
-## Executar o container
+Opcionalmente copie o arquivo de exemplo:
 
 ```bash
-docker run --rm -p 8000:8000 bookstore-ebac:modulo17
+cp .env.example .env
 ```
 
-Depois acesse:
+No PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Suba os serviços:
+
+```bash
+docker compose up --build
+```
+
+A aplicação ficará disponível em:
+
+```text
+http://127.0.0.1:8000/
+```
+
+A API pode ser acessada, por exemplo, em:
 
 ```text
 http://127.0.0.1:8000/api/products/
 ```
 
-## Validar o projeto dentro da imagem
+## Comandos úteis
+
+Ver os containers:
 
 ```bash
-docker run --rm bookstore-ebac:modulo17 python manage.py check
-docker run --rm bookstore-ebac:modulo17 python manage.py test
+docker compose ps
 ```
 
-## Funcionalidades preservadas das atividades anteriores
+Executar o Django check:
 
-- serializers de `Category`, `Product` e `Order`;
+```bash
+docker compose exec web python manage.py check
+```
+
+Executar os testes:
+
+```bash
+docker compose exec web python manage.py test
+```
+
+Abrir o shell do PostgreSQL:
+
+```bash
+docker compose exec db psql -U bookstore -d bookstore
+```
+
+Parar os serviços:
+
+```bash
+docker compose down
+```
+
+Parar e remover também o volume do banco:
+
+```bash
+docker compose down -v
+```
+
+## Validação automatizada
+
+O GitHub Actions desta atividade:
+
+1. constrói as imagens;
+2. sobe Django e PostgreSQL com Docker Compose;
+3. aguarda a aplicação responder;
+4. executa `python manage.py check`;
+5. executa `python manage.py test` utilizando PostgreSQL;
+6. encerra e remove os containers de teste.
+
+## Funcionalidades anteriores preservadas
+
+O projeto mantém as implementações das atividades anteriores:
+
+- serializers de Category, Product e Order;
 - ViewSets e rotas REST;
-- paginação com Django REST Framework;
-- Django Debug Toolbar em desenvolvimento;
-- `ProductViewSet` com acesso público;
-- `OrderViewSet` protegido com Token Authentication;
-- cada usuário visualiza somente os próprios pedidos;
-- endpoint `POST /api/token/` para obtenção de token.
-
-## CI
-
-O GitHub Actions desta atividade executa automaticamente:
-
-1. build da imagem Docker;
-2. `python manage.py check` dentro do container;
-3. `python manage.py test` dentro do container.
-
-Isso valida que a imagem não apenas é construída, mas também consegue executar o projeto e a suíte de testes.
+- paginação do Django REST Framework;
+- Django Debug Toolbar;
+- TokenAuthentication nos pedidos;
+- produtos com acesso público;
+- pedidos limitados ao usuário autenticado;
+- Dockerfile do Bookstore.
