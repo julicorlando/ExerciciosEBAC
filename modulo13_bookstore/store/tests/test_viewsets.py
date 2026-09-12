@@ -1,5 +1,7 @@
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
 from store.models import Category, Order, Product
@@ -7,6 +9,14 @@ from store.models import Category, Order, Product
 
 class ViewSetTests(APITestCase):
     def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(
+            username="julio",
+            password="SenhaForte123!",
+            email="julio@example.com",
+        )
+        self.token = Token.objects.create(user=self.user)
+
         self.category = Category.objects.create(
             name="Programação",
             description="Livros de desenvolvimento de software",
@@ -33,10 +43,14 @@ class ViewSetTests(APITestCase):
         self.other_product.categories.add(self.other_category)
 
         self.order = Order.objects.create(
+            user=self.user,
             customer_name="Julio Orlando",
             customer_email="julio@example.com",
         )
         self.order.products.add(self.product)
+
+    def authenticate(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
 
     def test_category_viewset_full_crud(self):
         list_url = reverse("category-list")
@@ -75,7 +89,7 @@ class ViewSetTests(APITestCase):
         self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Category.objects.filter(pk=category_id).exists())
 
-    def test_product_list_represents_categories(self):
+    def test_product_list_represents_categories_without_authentication(self):
         response = self.client.get(reverse("product-list"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -143,6 +157,7 @@ class ViewSetTests(APITestCase):
         self.assertFalse(Product.objects.filter(pk=self.product.id).exists())
 
     def test_order_viewset_creates_order_with_products(self):
+        self.authenticate()
         response = self.client.post(
             reverse("order-list"),
             {
@@ -156,10 +171,12 @@ class ViewSetTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         order = Order.objects.get(pk=response.data["id"])
+        self.assertEqual(order.user, self.user)
         self.assertEqual(order.products.count(), 2)
         self.assertEqual(len(response.data["products"]), 2)
 
     def test_order_viewset_rejects_invalid_email(self):
+        self.authenticate()
         response = self.client.post(
             reverse("order-list"),
             {
@@ -174,6 +191,7 @@ class ViewSetTests(APITestCase):
         self.assertIn("customer_email", response.data)
 
     def test_order_viewset_retrieve_update_and_delete(self):
+        self.authenticate()
         detail_url = reverse("order-detail", args=[self.order.id])
 
         retrieve_response = self.client.get(detail_url)

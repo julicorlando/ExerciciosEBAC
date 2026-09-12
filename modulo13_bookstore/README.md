@@ -1,95 +1,100 @@
-# Bookstore - EBAC - Paginação com Django REST Framework
+# Bookstore - EBAC - Token Authentication
 
-Projeto desenvolvido em continuidade às atividades de serializers e ViewSets do Bookstore.
+Projeto desenvolvido em continuidade às atividades de serializers, ViewSets e paginação do Bookstore com Django REST Framework.
 
 ## Objetivo
 
-Adicionar paginação às APIs do Django REST Framework e configurar o Django Debug Toolbar para auxiliar na análise de desempenho e quantidade de consultas executadas durante o desenvolvimento.
+Adicionar autenticação por token ao fluxo de pedidos (`OrderViewSet`), mantendo a consulta de produtos aberta, conforme o cenário de e-commerce apresentado na atividade.
 
-## Paginação
+## Regras de autenticação
 
-A paginação está centralizada em:
+### Produtos
 
-```text
-store/pagination.py
-```
-
-Foi criada a classe `BookstorePagination`, baseada em `PageNumberPagination`, com:
-
-- 5 registros por página por padrão;
-- parâmetro `page` para navegar entre páginas;
-- parâmetro `page_size` para alterar a quantidade de registros;
-- limite máximo de 10 registros por página.
-
-Exemplos:
+Os endpoints de produtos permanecem públicos. Não é necessário informar token para listar ou visualizar produtos.
 
 ```text
-/api/products/?page=2
-/api/products/?page_size=10
-/api/categories/?page=2&page_size=5
+GET /api/products/
+GET /api/products/<id>/
 ```
 
-As respostas de listagem seguem o padrão do DRF:
+### Pedidos
+
+Os endpoints de pedidos utilizam `TokenAuthentication` e exigem usuário autenticado.
+
+```text
+GET/POST /api/orders/
+GET/PATCH/DELETE /api/orders/<id>/
+```
+
+Além da autenticação, cada pedido é associado ao usuário que o criou. O `OrderViewSet` filtra o queryset para que o usuário autenticado visualize apenas os próprios pedidos.
+
+## Obter token
+
+Foi disponibilizado o endpoint:
+
+```text
+POST /api/token/
+```
+
+Exemplo de corpo:
 
 ```json
 {
-  "count": 12,
-  "next": "http://127.0.0.1:8000/api/categories/?page=2",
-  "previous": null,
-  "results": []
+  "username": "julio",
+  "password": "sua-senha"
 }
 ```
 
-## Django Debug Toolbar
+Resposta:
 
-O projeto inclui `django-debug-toolbar` para uso em ambiente de desenvolvimento.
-
-Com `DEBUG=True`, a toolbar é disponibilizada em:
-
-```text
-/__debug__/
+```json
+{
+  "token": "seu-token"
+}
 ```
 
-Ela permite acompanhar informações de profiling, tempo de resposta e consultas SQL executadas durante as requisições.
-
-## Endpoints
+Nas chamadas protegidas, envie o cabeçalho:
 
 ```text
-/api/categories/
-/api/categories/<id>/
-/api/products/
-/api/products/<id>/
-/api/orders/
-/api/orders/<id>/
+Authorization: Token seu-token
 ```
+
+## Implementação
+
+- `rest_framework.authtoken` incluído em `INSTALLED_APPS`;
+- `TokenAuthentication` aplicado ao `OrderViewSet`;
+- `IsAuthenticated` aplicado ao `OrderViewSet`;
+- `ProductViewSet` mantido com acesso público;
+- `Order` relacionado ao usuário criador;
+- criação de pedido associa automaticamente `request.user`;
+- queryset de pedidos limitado ao usuário autenticado;
+- endpoint para obtenção de token;
+- paginação das atividades anteriores preservada.
 
 ## Testes
 
-Além dos testes de serializers e CRUD dos ViewSets, foram adicionados testes específicos para validar:
+Os testes validam:
 
-- estrutura paginada com `count`, `next`, `previous` e `results`;
-- tamanho padrão de 5 registros;
-- navegação para a segunda página;
-- customização com `page_size=10`;
-- limite máximo de 10 registros por página.
+- acesso público aos produtos;
+- bloqueio de pedidos sem token;
+- rejeição de token inválido;
+- acesso de usuário autenticado aos próprios pedidos;
+- impedimento de acesso ao pedido de outro usuário;
+- associação automática do pedido ao usuário autenticado;
+- geração/obtenção de token;
+- CRUD já existente de Category, Product e Order.
 
 Execute:
 
 ```bash
 cd modulo13_bookstore
 poetry install
+poetry run python manage.py migrate
 poetry run python manage.py test
 ```
 
-## Executar o projeto
+Para iniciar o servidor:
 
 ```bash
-poetry run python manage.py migrate
 poetry run python manage.py runserver
-```
-
-Depois acesse, por exemplo:
-
-```text
-http://127.0.0.1:8000/api/products/
 ```
