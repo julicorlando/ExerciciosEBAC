@@ -39,7 +39,11 @@ jobs:
         run: poetry install --no-interaction
 
       - name: Revisão estática com Ruff
-        run: ruff check bookstore store --output-format=github
+        run: >
+          ruff check bookstore store
+          --output-format=github
+          --select=E4,E7,E9,F,I
+          --exclude=store/migrations
 
       - name: Verificar migrations pendentes
         run: poetry run python manage.py makemigrations --check --dry-run
