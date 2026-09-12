@@ -1,4 +1,4 @@
-name: Módulo 13 - Bookstore Django REST Framework
+name: Bookstore - Serializers e Testes
 
 on:
   push:
@@ -31,8 +31,11 @@ jobs:
       - name: Instalar dependências
         run: poetry install --no-interaction
 
+      - name: Verificar migrations pendentes
+        run: poetry run python manage.py makemigrations --check --dry-run
+
       - name: Django check
         run: poetry run python manage.py check
 
       - name: Executar testes
-        run: poetry run pytest
+        run: poetry run python manage.py test
