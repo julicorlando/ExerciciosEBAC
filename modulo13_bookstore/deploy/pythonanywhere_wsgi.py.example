@@ -1,0 +1,14 @@
+import os
+import sys
+
+# Troque SEU_USUARIO pelo usuário cadastrado no PythonAnywhere.
+project_path = "/home/SEU_USUARIO/ExerciciosEBAC/modulo13_bookstore"
+
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "bookstore.settings")
+
+from django.core.wsgi import get_wsgi_application
+
+application = get_wsgi_application()
