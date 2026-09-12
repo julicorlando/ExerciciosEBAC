@@ -3,12 +3,17 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "ebac-modulo13-bookstore-dev"
-DEBUG = True
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "ebac-modulo13-bookstore-dev")
+DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
+
 ALLOWED_HOSTS = os.getenv(
     "DJANGO_ALLOWED_HOSTS",
     "localhost,127.0.0.1,web",
 ).split(",")
+
+pythonanywhere_host = os.getenv("PYTHONANYWHERE_HOST", "").strip()
+if pythonanywhere_host and pythonanywhere_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(pythonanywhere_host)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -39,7 +44,7 @@ ROOT_URLCONF = "bookstore.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "bookstore" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -82,6 +87,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 INTERNAL_IPS = ["127.0.0.1"]
