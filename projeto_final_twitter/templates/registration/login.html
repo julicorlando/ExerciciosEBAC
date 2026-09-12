@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Entrar · Twitter Clone{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <div class="auth-logo">𝕏</div>
+  <h1>Entrar no Twitter Clone</h1>
+  <form method="post" class="stack-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="primary" type="submit">Entrar</button>
+  </form>
+  <p class="muted">Ainda não possui conta? <a href="{% url 'register' %}">Criar conta</a></p>
+</section>
+{% endblock %}
