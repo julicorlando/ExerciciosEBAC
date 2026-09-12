@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Twitter Clone EBAC{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  <div class="app-shell">
+    {% if user.is_authenticated %}
+      <aside class="sidebar">
+        <a class="brand" href="{% url 'feed' %}" aria-label="Página inicial">𝕏</a>
+        <nav>
+          <a href="{% url 'feed' %}">🏠 <span>Início</span></a>
+          <a href="{% url 'user-list' %}">🔎 <span>Explorar</span></a>
+          <a href="{% url 'profile-detail' user.username %}">👤 <span>Perfil</span></a>
+          <a href="{% url 'profile-edit' %}">⚙️ <span>Configurações</span></a>
+        </nav>
+        <form action="{% url 'logout' %}" method="post">
+          {% csrf_token %}
+          <button class="link-button" type="submit">↪ <span>Sair</span></button>
+        </form>
+      </aside>
+    {% endif %}
+
+    <main class="main-column {% if not user.is_authenticated %}auth-column{% endif %}">
+      {% if messages %}
+        <div class="messages">
+          {% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>
