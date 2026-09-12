@@ -1,0 +1,27 @@
+name: Módulo 17 - Dockerfile Bookstore
+
+on:
+  push:
+    branches:
+      - modulo17-dockerfile
+  pull_request:
+    paths:
+      - "modulo13_bookstore/**"
+      - ".github/workflows/modulo17-dockerfile.yml"
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build da imagem
+        run: docker build -t bookstore-ebac:modulo17 ./modulo13_bookstore
+
+      - name: Django check dentro do container
+        run: docker run --rm bookstore-ebac:modulo17 python manage.py check
+
+      - name: Testes dentro do container
+        run: docker run --rm bookstore-ebac:modulo17 python manage.py test
