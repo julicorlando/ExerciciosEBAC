@@ -1,45 +1,47 @@
-# Bookstore - EBAC - Docker Compose com PostgreSQL
+# Bookstore - EBAC - Docker Network Bridge
 
-Projeto desenvolvido em continuidade às atividades anteriores do Bookstore com Django REST Framework.
+Projeto desenvolvido em continuidade às atividades anteriores do Bookstore com Django REST Framework, Dockerfile e Docker Compose com PostgreSQL.
 
 ## Objetivo desta atividade
 
-Adicionar Docker Compose ao projeto e configurar a aplicação Django para utilizar PostgreSQL em container separado.
+Deixar explícita no `docker-compose.yml` a rede utilizada pelos serviços da aplicação e do banco de dados, utilizando uma rede Docker do tipo `bridge`.
 
-## Serviços
+## Rede Docker
 
-O arquivo `docker-compose.yml` define dois serviços:
-
-- `web`: aplicação Django construída a partir do `Dockerfile`;
-- `db`: banco PostgreSQL 16.
-
-O serviço `web` aguarda o PostgreSQL ficar saudável, executa as migrations e inicia o Django na porta `8000`.
-
-## Banco de dados
-
-Quando a variável `POSTGRES_HOST` está definida, o Django utiliza PostgreSQL.
-
-Variáveis utilizadas:
+Foi criada a rede:
 
 ```text
-POSTGRES_DB=bookstore
-POSTGRES_USER=bookstore
-POSTGRES_PASSWORD=bookstore
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
+bookstore_network
 ```
 
-Para execução local sem Docker Compose, caso `POSTGRES_HOST` não esteja definida, o projeto continua utilizando SQLite.
-
-## Dependência PostgreSQL
-
-Foi adicionado ao Poetry o driver:
+com o driver:
 
 ```text
-psycopg[binary]
+bridge
 ```
 
-## Subir a aplicação
+Os serviços `web` e `db` foram associados explicitamente a essa mesma rede.
+
+Trecho principal da configuração:
+
+```yaml
+services:
+  db:
+    networks:
+      - bookstore_network
+
+  web:
+    networks:
+      - bookstore_network
+
+networks:
+  bookstore_network:
+    driver: bridge
+```
+
+Com isso, a aplicação Django se comunica com o PostgreSQL pelo nome do serviço `db`, dentro da rede privada criada pelo Docker Compose.
+
+## Subir os serviços
 
 Entre na pasta do projeto:
 
@@ -47,69 +49,55 @@ Entre na pasta do projeto:
 cd modulo13_bookstore
 ```
 
-Opcionalmente copie o arquivo de exemplo:
-
-```bash
-cp .env.example .env
-```
-
-No PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Suba os serviços:
+Suba a aplicação e o PostgreSQL:
 
 ```bash
 docker compose up --build
 ```
 
-A aplicação ficará disponível em:
-
-```text
-http://127.0.0.1:8000/
-```
-
-A API pode ser acessada, por exemplo, em:
+A API ficará disponível em:
 
 ```text
 http://127.0.0.1:8000/api/products/
 ```
 
-## Comandos úteis
+## Verificar a rede
 
-Ver os containers:
+Liste as redes Docker:
+
+```bash
+docker network ls
+```
+
+Veja os containers do projeto:
 
 ```bash
 docker compose ps
 ```
 
-Executar o Django check:
+Também é possível inspecionar a rede criada pelo Compose:
 
 ```bash
-docker compose exec web python manage.py check
+docker network inspect modulo13_bookstore_bookstore_network
 ```
 
-Executar os testes:
+O nome pode variar conforme o nome da pasta/projeto do Docker Compose, mas o driver deve ser `bridge` e os containers `web` e `db` devem aparecer conectados à mesma rede.
+
+## Testes
+
+Execute a suíte dentro do container da aplicação:
 
 ```bash
 docker compose exec web python manage.py test
 ```
 
-Abrir o shell do PostgreSQL:
-
-```bash
-docker compose exec db psql -U bookstore -d bookstore
-```
-
-Parar os serviços:
+Para encerrar os serviços:
 
 ```bash
 docker compose down
 ```
 
-Parar e remover também o volume do banco:
+Para remover também o volume do PostgreSQL:
 
 ```bash
 docker compose down -v
@@ -117,18 +105,18 @@ docker compose down -v
 
 ## Validação automatizada
 
-O GitHub Actions desta atividade:
+O GitHub Actions desta atividade valida automaticamente:
 
-1. constrói as imagens;
-2. sobe Django e PostgreSQL com Docker Compose;
-3. aguarda a aplicação responder;
-4. executa `python manage.py check`;
-5. executa `python manage.py test` utilizando PostgreSQL;
-6. encerra e remove os containers de teste.
+1. a sintaxe do `docker-compose.yml`;
+2. a subida dos serviços `web` e `db`;
+3. se os dois containers estão conectados à mesma rede;
+4. se o driver da rede é `bridge`;
+5. se a aplicação responde corretamente;
+6. a execução dos testes do Django.
 
 ## Funcionalidades anteriores preservadas
 
-O projeto mantém as implementações das atividades anteriores:
+O projeto continua com:
 
 - serializers de Category, Product e Order;
 - ViewSets e rotas REST;
@@ -136,5 +124,7 @@ O projeto mantém as implementações das atividades anteriores:
 - Django Debug Toolbar;
 - TokenAuthentication nos pedidos;
 - produtos com acesso público;
-- pedidos limitados ao usuário autenticado;
-- Dockerfile do Bookstore.
+- pedidos restritos ao usuário autenticado;
+- Dockerfile;
+- Docker Compose;
+- PostgreSQL em container separado.
