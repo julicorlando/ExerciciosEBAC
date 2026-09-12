@@ -1,100 +1,73 @@
-# Bookstore - EBAC - Token Authentication
+# Bookstore - EBAC - Dockerfile
 
-Projeto desenvolvido em continuidade às atividades de serializers, ViewSets e paginação do Bookstore com Django REST Framework.
+Projeto desenvolvido em continuidade às atividades de serializers, ViewSets, paginação e Token Authentication do Bookstore com Django REST Framework.
 
-## Objetivo
+## Objetivo desta atividade
 
-Adicionar autenticação por token ao fluxo de pedidos (`OrderViewSet`), mantendo a consulta de produtos aberta, conforme o cenário de e-commerce apresentado na atividade.
+Criar um `Dockerfile` para empacotar e executar o projeto Bookstore em um container Docker, conforme os conceitos estudados de imagem, container, host, `build` e `run`.
 
-## Regras de autenticação
+## Dockerfile
 
-### Produtos
-
-Os endpoints de produtos permanecem públicos. Não é necessário informar token para listar ou visualizar produtos.
+O arquivo está em:
 
 ```text
-GET /api/products/
-GET /api/products/<id>/
+modulo13_bookstore/Dockerfile
 ```
 
-### Pedidos
+A imagem utiliza:
 
-Os endpoints de pedidos utilizam `TokenAuthentication` e exigem usuário autenticado.
+- `python:3.12-slim` como imagem base;
+- Poetry para instalar as dependências do projeto;
+- `/app` como diretório de trabalho;
+- porta `8000` para a aplicação Django;
+- `python manage.py runserver 0.0.0.0:8000` como comando de execução.
 
-```text
-GET/POST /api/orders/
-GET/PATCH/DELETE /api/orders/<id>/
-```
+Também foi criado um `.dockerignore` para evitar o envio de arquivos desnecessários para o contexto do build.
 
-Além da autenticação, cada pedido é associado ao usuário que o criou. O `OrderViewSet` filtra o queryset para que o usuário autenticado visualize apenas os próprios pedidos.
+## Construir a imagem
 
-## Obter token
-
-Foi disponibilizado o endpoint:
-
-```text
-POST /api/token/
-```
-
-Exemplo de corpo:
-
-```json
-{
-  "username": "julio",
-  "password": "sua-senha"
-}
-```
-
-Resposta:
-
-```json
-{
-  "token": "seu-token"
-}
-```
-
-Nas chamadas protegidas, envie o cabeçalho:
-
-```text
-Authorization: Token seu-token
-```
-
-## Implementação
-
-- `rest_framework.authtoken` incluído em `INSTALLED_APPS`;
-- `TokenAuthentication` aplicado ao `OrderViewSet`;
-- `IsAuthenticated` aplicado ao `OrderViewSet`;
-- `ProductViewSet` mantido com acesso público;
-- `Order` relacionado ao usuário criador;
-- criação de pedido associa automaticamente `request.user`;
-- queryset de pedidos limitado ao usuário autenticado;
-- endpoint para obtenção de token;
-- paginação das atividades anteriores preservada.
-
-## Testes
-
-Os testes validam:
-
-- acesso público aos produtos;
-- bloqueio de pedidos sem token;
-- rejeição de token inválido;
-- acesso de usuário autenticado aos próprios pedidos;
-- impedimento de acesso ao pedido de outro usuário;
-- associação automática do pedido ao usuário autenticado;
-- geração/obtenção de token;
-- CRUD já existente de Category, Product e Order.
-
-Execute:
+A partir da pasta `modulo13_bookstore`:
 
 ```bash
-cd modulo13_bookstore
-poetry install
-poetry run python manage.py migrate
-poetry run python manage.py test
+docker build -t bookstore-ebac:modulo17 .
 ```
 
-Para iniciar o servidor:
+## Executar o container
 
 ```bash
-poetry run python manage.py runserver
+docker run --rm -p 8000:8000 bookstore-ebac:modulo17
 ```
+
+Depois acesse:
+
+```text
+http://127.0.0.1:8000/api/products/
+```
+
+## Validar o projeto dentro da imagem
+
+```bash
+docker run --rm bookstore-ebac:modulo17 python manage.py check
+docker run --rm bookstore-ebac:modulo17 python manage.py test
+```
+
+## Funcionalidades preservadas das atividades anteriores
+
+- serializers de `Category`, `Product` e `Order`;
+- ViewSets e rotas REST;
+- paginação com Django REST Framework;
+- Django Debug Toolbar em desenvolvimento;
+- `ProductViewSet` com acesso público;
+- `OrderViewSet` protegido com Token Authentication;
+- cada usuário visualiza somente os próprios pedidos;
+- endpoint `POST /api/token/` para obtenção de token.
+
+## CI
+
+O GitHub Actions desta atividade executa automaticamente:
+
+1. build da imagem Docker;
+2. `python manage.py check` dentro do container;
+3. `python manage.py test` dentro do container.
+
+Isso valida que a imagem não apenas é construída, mas também consegue executar o projeto e a suíte de testes.
