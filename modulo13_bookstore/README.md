@@ -1,79 +1,80 @@
-# Bookstore - EBAC - Serializers
+# Bookstore - EBAC - ViewSets e Testes
 
-Projeto desenvolvido para a atividade de criação e testes de serializers com Django REST Framework.
+Projeto desenvolvido em continuidade às atividades do Bookstore com Django REST Framework.
 
-## Objetivo
+## Objetivo desta atividade
 
-Implementar serializers para as entidades `Product`, `Category` e `Order`, representar `Category` dentro de `Product` e validar o comportamento por meio de testes automatizados.
+Construir os ViewSets das entidades `Category`, `Product` e `Order` a partir dos serializers já existentes, publicar as rotas da API com `DefaultRouter` e validar o CRUD por meio de testes automatizados.
 
-## Entidades
+## ViewSets implementados
 
-### Category
-
-Campos principais:
-
-- `id`;
-- `name`;
-- `description`.
-
-### Product
-
-Campos principais:
-
-- `id`;
-- `name`;
-- `description`;
-- `price`;
-- `stock`;
-- relacionamento muitos-para-muitos com `Category`.
-
-Na leitura, `ProductSerializer` retorna as categorias de forma aninhada no campo `categories`. Na escrita, o campo `category_ids` permite informar as categorias por seus IDs.
-
-### Order
-
-Campos principais:
-
-- `id`;
-- `customer_name`;
-- `customer_email`;
-- `status`;
-- relacionamento muitos-para-muitos com `Product`;
-- `created_at`.
-
-Na leitura, `OrderSerializer` retorna os produtos relacionados. Na escrita, `product_ids` recebe os IDs dos produtos.
-
-## Serializers
-
-Os serializers estão em:
+Os ViewSets estão em:
 
 ```text
-store/serializers.py
+store/views.py
 ```
 
 Foram implementados:
 
-- `CategorySerializer`;
-- `ProductSerializer`;
-- `OrderSerializer`.
+- `CategoryViewSet`;
+- `ProductViewSet`;
+- `OrderViewSet`.
+
+Todos utilizam `ModelViewSet`, disponibilizando as operações padrão de CRUD:
+
+- `list`;
+- `create`;
+- `retrieve`;
+- `update` / `partial_update`;
+- `destroy`.
+
+## Rotas
+
+As rotas do app estão em `store/urls.py` e são incluídas pelo arquivo principal `bookstore/urls.py`.
+
+Endpoints principais:
+
+```text
+GET/POST        /api/categories/
+GET/PATCH/DELETE /api/categories/<id>/
+
+GET/POST        /api/products/
+GET/PATCH/DELETE /api/products/<id>/
+
+GET/POST        /api/orders/
+GET/PATCH/DELETE /api/orders/<id>/
+```
+
+## Serializers e relacionamentos
+
+- `Product` retorna suas categorias no campo `categories` e recebe IDs em `category_ids` na escrita;
+- `Order` retorna seus produtos no campo `products` e recebe IDs em `product_ids` na escrita.
 
 ## Testes automatizados
 
-Os testes estão em:
+Os testes dos ViewSets estão em:
+
+```text
+store/tests/test_viewsets.py
+```
+
+Eles cobrem:
+
+- listagem e criação;
+- recuperação de objeto único;
+- atualização parcial;
+- exclusão;
+- representação dos relacionamentos;
+- criação de `Product` com categorias;
+- criação de `Order` com produtos;
+- rejeição de dados inválidos;
+- validação dos códigos HTTP retornados pela API.
+
+Os testes de serializers permanecem em:
 
 ```text
 store/tests/test_serializers.py
 ```
-
-Eles verificam:
-
-- aceitação de dados válidos;
-- validação de campos obrigatórios;
-- rejeição de preço negativo;
-- rejeição de e-mail inválido;
-- campos retornados pelos serializers;
-- representação de `Category` dentro de `Product`;
-- representação de produtos dentro de `Order`;
-- criação de objetos e persistência dos relacionamentos.
 
 ## Instalação
 
@@ -82,7 +83,7 @@ cd modulo13_bookstore
 poetry install
 ```
 
-## Banco e migrations
+## Banco de dados
 
 ```bash
 poetry run python manage.py migrate
@@ -90,20 +91,20 @@ poetry run python manage.py migrate
 
 ## Executar os testes
 
-Conforme solicitado na atividade:
+Conforme solicitado nas atividades:
 
 ```bash
 poetry run python manage.py test
 ```
 
-Também é possível validar se há migrations pendentes:
-
-```bash
-poetry run python manage.py makemigrations --check --dry-run
-```
-
-## Executar o projeto
+## Executar a aplicação
 
 ```bash
 poetry run python manage.py runserver
+```
+
+A API ficará disponível em:
+
+```text
+http://127.0.0.1:8000/api/
 ```
