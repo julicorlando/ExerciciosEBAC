@@ -1,0 +1,92 @@
+name: Módulo 20 - CI e Code Review
+
+on:
+  push:
+    branches:
+      - modulo20-ci-code-review
+  pull_request:
+    paths:
+      - "modulo13_bookstore/**"
+      - ".github/workflows/modulo20-ci-code-review.yml"
+      - ".github/pull_request_template.md"
+
+permissions:
+  contents: read
+
+jobs:
+  code-review:
+    name: Code Review automatizado
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: modulo13_bookstore
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Poetry e Ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry ruff
+
+      - name: Instalar dependências
+        run: poetry install --no-interaction
+
+      - name: Revisão estática com Ruff
+        run: ruff check bookstore store --output-format=github
+
+      - name: Verificar migrations pendentes
+        run: poetry run python manage.py makemigrations --check --dry-run
+
+      - name: Django system check
+        run: poetry run python manage.py check
+
+  tests:
+    name: Testes automatizados
+    runs-on: ubuntu-latest
+    needs: code-review
+    defaults:
+      run:
+        working-directory: modulo13_bookstore
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Poetry
+        run: pip install poetry
+
+      - name: Instalar dependências
+        run: poetry install --no-interaction
+
+      - name: Executar suíte de testes
+        run: poetry run python manage.py test
+
+  docker-build:
+    name: Build Docker
+    runs-on: ubuntu-latest
+    needs: tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validar Docker Compose
+        run: docker compose -f modulo13_bookstore/docker-compose.yml config
+
+      - name: Build da imagem da aplicação
+        run: docker build -t bookstore-ebac:ci ./modulo13_bookstore
+
+      - name: Validar Django dentro da imagem
+        run: docker run --rm bookstore-ebac:ci python manage.py check
