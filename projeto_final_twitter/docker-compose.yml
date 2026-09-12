@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: twitterclone
+      POSTGRES_USER: twitterclone
+      POSTGRES_PASSWORD: twitterclone
+    volumes:
+      - twitterclone_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twitterclone -d twitterclone"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    command: sh -c "python manage.py migrate && gunicorn twitterclone.wsgi:application --bind 0.0.0.0:8000"
+    environment:
+      DJANGO_SECRET_KEY: docker-dev-secret
+      DJANGO_DEBUG: "True"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,web
+      POSTGRES_HOST: db
+      POSTGRES_DB: twitterclone
+      POSTGRES_USER: twitterclone
+      POSTGRES_PASSWORD: twitterclone
+      POSTGRES_PORT: "5432"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - twitterclone_media:/app/media
+
+volumes:
+  twitterclone_postgres:
+  twitterclone_media:
