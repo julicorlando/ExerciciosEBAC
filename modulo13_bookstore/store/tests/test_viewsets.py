@@ -43,7 +43,8 @@ class ViewSetTests(APITestCase):
 
         list_response = self.client.get(list_url)
         self.assertEqual(list_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(list_response.data), 2)
+        self.assertEqual(len(list_response.data["results"]), 2)
+        self.assertEqual(list_response.data["count"], 2)
 
         create_response = self.client.post(
             list_url,
@@ -78,10 +79,10 @@ class ViewSetTests(APITestCase):
         response = self.client.get(reverse("product-list"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data["results"]), 2)
 
         product_data = next(
-            item for item in response.data if item["id"] == self.product.id
+            item for item in response.data["results"] if item["id"] == self.product.id
         )
         self.assertEqual(product_data["categories"][0]["id"], self.category.id)
         self.assertEqual(

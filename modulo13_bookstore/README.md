@@ -1,110 +1,95 @@
-# Bookstore - EBAC - ViewSets e Testes
+# Bookstore - EBAC - Paginação com Django REST Framework
 
-Projeto desenvolvido em continuidade às atividades do Bookstore com Django REST Framework.
+Projeto desenvolvido em continuidade às atividades de serializers e ViewSets do Bookstore.
 
-## Objetivo desta atividade
+## Objetivo
 
-Construir os ViewSets das entidades `Category`, `Product` e `Order` a partir dos serializers já existentes, publicar as rotas da API com `DefaultRouter` e validar o CRUD por meio de testes automatizados.
+Adicionar paginação às APIs do Django REST Framework e configurar o Django Debug Toolbar para auxiliar na análise de desempenho e quantidade de consultas executadas durante o desenvolvimento.
 
-## ViewSets implementados
+## Paginação
 
-Os ViewSets estão em:
-
-```text
-store/views.py
-```
-
-Foram implementados:
-
-- `CategoryViewSet`;
-- `ProductViewSet`;
-- `OrderViewSet`.
-
-Todos utilizam `ModelViewSet`, disponibilizando as operações padrão de CRUD:
-
-- `list`;
-- `create`;
-- `retrieve`;
-- `update` / `partial_update`;
-- `destroy`.
-
-## Rotas
-
-As rotas do app estão em `store/urls.py` e são incluídas pelo arquivo principal `bookstore/urls.py`.
-
-Endpoints principais:
+A paginação está centralizada em:
 
 ```text
-GET/POST        /api/categories/
-GET/PATCH/DELETE /api/categories/<id>/
-
-GET/POST        /api/products/
-GET/PATCH/DELETE /api/products/<id>/
-
-GET/POST        /api/orders/
-GET/PATCH/DELETE /api/orders/<id>/
+store/pagination.py
 ```
 
-## Serializers e relacionamentos
+Foi criada a classe `BookstorePagination`, baseada em `PageNumberPagination`, com:
 
-- `Product` retorna suas categorias no campo `categories` e recebe IDs em `category_ids` na escrita;
-- `Order` retorna seus produtos no campo `products` e recebe IDs em `product_ids` na escrita.
+- 5 registros por página por padrão;
+- parâmetro `page` para navegar entre páginas;
+- parâmetro `page_size` para alterar a quantidade de registros;
+- limite máximo de 10 registros por página.
 
-## Testes automatizados
-
-Os testes dos ViewSets estão em:
+Exemplos:
 
 ```text
-store/tests/test_viewsets.py
+/api/products/?page=2
+/api/products/?page_size=10
+/api/categories/?page=2&page_size=5
 ```
 
-Eles cobrem:
+As respostas de listagem seguem o padrão do DRF:
 
-- listagem e criação;
-- recuperação de objeto único;
-- atualização parcial;
-- exclusão;
-- representação dos relacionamentos;
-- criação de `Product` com categorias;
-- criação de `Order` com produtos;
-- rejeição de dados inválidos;
-- validação dos códigos HTTP retornados pela API.
+```json
+{
+  "count": 12,
+  "next": "http://127.0.0.1:8000/api/categories/?page=2",
+  "previous": null,
+  "results": []
+}
+```
 
-Os testes de serializers permanecem em:
+## Django Debug Toolbar
+
+O projeto inclui `django-debug-toolbar` para uso em ambiente de desenvolvimento.
+
+Com `DEBUG=True`, a toolbar é disponibilizada em:
 
 ```text
-store/tests/test_serializers.py
+/__debug__/
 ```
 
-## Instalação
+Ela permite acompanhar informações de profiling, tempo de resposta e consultas SQL executadas durante as requisições.
+
+## Endpoints
+
+```text
+/api/categories/
+/api/categories/<id>/
+/api/products/
+/api/products/<id>/
+/api/orders/
+/api/orders/<id>/
+```
+
+## Testes
+
+Além dos testes de serializers e CRUD dos ViewSets, foram adicionados testes específicos para validar:
+
+- estrutura paginada com `count`, `next`, `previous` e `results`;
+- tamanho padrão de 5 registros;
+- navegação para a segunda página;
+- customização com `page_size=10`;
+- limite máximo de 10 registros por página.
+
+Execute:
 
 ```bash
 cd modulo13_bookstore
 poetry install
-```
-
-## Banco de dados
-
-```bash
-poetry run python manage.py migrate
-```
-
-## Executar os testes
-
-Conforme solicitado nas atividades:
-
-```bash
 poetry run python manage.py test
 ```
 
-## Executar a aplicação
+## Executar o projeto
 
 ```bash
+poetry run python manage.py migrate
 poetry run python manage.py runserver
 ```
 
-A API ficará disponível em:
+Depois acesse, por exemplo:
 
 ```text
-http://127.0.0.1:8000/api/
+http://127.0.0.1:8000/api/products/
 ```
