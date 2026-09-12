@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bookstore}
+      POSTGRES_USER: ${POSTGRES_USER:-bookstore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bookstore}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-bookstore} -d ${POSTGRES_DB:-bookstore}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bookstore}
+      POSTGRES_USER: ${POSTGRES_USER:-bookstore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bookstore}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,web
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
