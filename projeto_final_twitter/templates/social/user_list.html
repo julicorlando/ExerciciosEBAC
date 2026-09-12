@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} · Twitter Clone{% endblock %}
+{% block content %}
+<header class="page-header"><a href="javascript:history.back()">←</a><h1>{{ title }}</h1></header>
+<section class="people-list">
+  {% for person in users %}
+    <a class="person-row" href="{% url 'profile-detail' person.username %}">
+      {% if person.profile.avatar %}<img class="avatar" src="{{ person.profile.avatar.url }}" alt="Foto de {{ person.username }}">{% else %}<div class="avatar placeholder">{{ person.username|first|upper }}</div>{% endif %}
+      <div><strong>{{ person.get_full_name|default:person.username }}</strong><span class="muted">@{{ person.username }}</span>{% if person.profile.bio %}<p>{{ person.profile.bio }}</p>{% endif %}</div>
+    </a>
+  {% empty %}
+    <div class="empty-state"><p>Nenhum usuário encontrado.</p></div>
+  {% endfor %}
+</section>
+{% endblock %}
