@@ -1,0 +1,58 @@
+name: Módulo 19 - Docker Network Bridge
+
+on:
+  push:
+    branches:
+      - modulo19-network-bridge
+  pull_request:
+    paths:
+      - "modulo13_bookstore/**"
+      - ".github/workflows/modulo19-network-bridge.yml"
+
+jobs:
+  network:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validar configuração do Docker Compose
+        run: docker compose -f modulo13_bookstore/docker-compose.yml config
+
+      - name: Subir aplicação e PostgreSQL
+        run: docker compose -f modulo13_bookstore/docker-compose.yml up -d --build
+
+      - name: Validar rede bridge explícita
+        shell: bash
+        run: |
+          WEB_CONTAINER=$(docker compose -f modulo13_bookstore/docker-compose.yml ps -q web)
+          DB_CONTAINER=$(docker compose -f modulo13_bookstore/docker-compose.yml ps -q db)
+
+          WEB_NETWORK=$(docker inspect "$WEB_CONTAINER" --format '{{range $name, $config := .NetworkSettings.Networks}}{{$name}}{{end}}')
+          DB_NETWORK=$(docker inspect "$DB_CONTAINER" --format '{{range $name, $config := .NetworkSettings.Networks}}{{$name}}{{end}}')
+
+          echo "Rede do web: $WEB_NETWORK"
+          echo "Rede do db: $DB_NETWORK"
+
+          test "$WEB_NETWORK" = "$DB_NETWORK"
+          test "$(docker network inspect "$WEB_NETWORK" --format '{{.Driver}}')" = "bridge"
+
+      - name: Aguardar aplicação ficar disponível
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/api/health/; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -f modulo13_bookstore/docker-compose.yml logs
+          exit 1
+
+      - name: Executar testes
+        run: docker compose -f modulo13_bookstore/docker-compose.yml exec -T web python manage.py test
+
+      - name: Encerrar serviços
+        if: always()
+        run: docker compose -f modulo13_bookstore/docker-compose.yml down -v
