@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "bookstore-ebac-modulo13"
+version = "0.1.0"
+description = "Projeto Bookstore criado do zero para o Módulo 13 da EBAC"
+authors = ["Julio Orlando <falecomjulioorlando@outlook.com>"]
+readme = "README.md"
+packages = [{ include = "bookstore" }]
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+Django = ">=5.1,<6.0"
+djangorestframework = ">=3.15,<4.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0,<9.0"
+pytest-django = ">=4.8,<5.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
