@@ -2,9 +2,10 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from .models import Comment, Follow, Like, Post, Profile
+from .models import Follow, Like, Post, Profile
 from .serializers import (
     CommentSerializer,
     FollowSerializer,
@@ -36,12 +37,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if instance.user != request.user:
-            return Response({"detail": "Você só pode alterar o próprio perfil."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "Você só pode alterar o próprio perfil."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         return super().update(request, *args, **kwargs)
 
 
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.select_related("author", "author__profile").prefetch_related("comments__author", "likes")
+    queryset = Post.objects.select_related("author", "author__profile").prefetch_related(
+        "comments__author", "likes"
+    )
     serializer_class = PostSerializer
 
     def perform_create(self, serializer):
@@ -49,12 +55,12 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
-            raise permissions.PermissionDenied("Você só pode editar seus próprios posts.")
+            raise PermissionDenied("Você só pode editar seus próprios posts.")
         serializer.save()
 
     def perform_destroy(self, instance):
         if instance.author != self.request.user:
-            raise permissions.PermissionDenied("Você só pode excluir seus próprios posts.")
+            raise PermissionDenied("Você só pode excluir seus próprios posts.")
         instance.delete()
 
     @action(detail=False, methods=["get"])
@@ -79,7 +85,10 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = CommentSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         comment = serializer.save(author=request.user, post=post)
-        return Response(CommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED)
+        return Response(
+            CommentSerializer(comment, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class FollowViewSet(viewsets.ModelViewSet):
@@ -93,7 +102,7 @@ class FollowViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         if instance.follower != self.request.user:
-            raise permissions.PermissionDenied("Relação não pertence ao usuário autenticado.")
+            raise PermissionDenied("Relação não pertence ao usuário autenticado.")
         instance.delete()
 
 
