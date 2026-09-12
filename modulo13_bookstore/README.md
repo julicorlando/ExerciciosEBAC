@@ -1,47 +1,90 @@
-# Bookstore - EBAC - Docker Network Bridge
+# Bookstore - EBAC - Continuous Integration e Code Review
 
-Projeto desenvolvido em continuidade às atividades anteriores do Bookstore com Django REST Framework, Dockerfile e Docker Compose com PostgreSQL.
+Projeto desenvolvido em continuidade às atividades anteriores do Bookstore com Django REST Framework, Docker e PostgreSQL.
 
 ## Objetivo desta atividade
 
-Deixar explícita no `docker-compose.yml` a rede utilizada pelos serviços da aplicação e do banco de dados, utilizando uma rede Docker do tipo `bridge`.
+Configurar uma esteira de Continuous Integration utilizando GitHub Actions para validar automaticamente as alterações enviadas ao projeto por meio de Pull Requests.
 
-## Rede Docker
+A pipeline foi organizada para validar qualidade de código, integridade do Django, testes automatizados e build Docker antes da aprovação das alterações.
 
-Foi criada a rede:
+## GitHub Actions
 
-```text
-bookstore_network
-```
-
-com o driver:
+O workflow desta atividade está em:
 
 ```text
-bridge
+.github/workflows/modulo20-ci-code-review.yml
 ```
 
-Os serviços `web` e `db` foram associados explicitamente a essa mesma rede.
+A automação é executada em Pull Requests que alterem o projeto Bookstore e também em pushes na branch da atividade.
 
-Trecho principal da configuração:
+## Code Review automatizado
 
-```yaml
-services:
-  db:
-    networks:
-      - bookstore_network
+A primeira etapa da pipeline é o job:
 
-  web:
-    networks:
-      - bookstore_network
-
-networks:
-  bookstore_network:
-    driver: bridge
+```text
+Code Review automatizado
 ```
 
-Com isso, a aplicação Django se comunica com o PostgreSQL pelo nome do serviço `db`, dentro da rede privada criada pelo Docker Compose.
+Ele executa:
 
-## Subir os serviços
+- instalação das dependências com Poetry;
+- análise estática do código com Ruff;
+- verificação de migrations pendentes;
+- `python manage.py check`.
+
+O Ruff utiliza o formato de saída do GitHub para que problemas encontrados apareçam como anotações no próprio workflow/Pull Request.
+
+## Testes automatizados
+
+Somente após o Code Review automatizado ser aprovado, o workflow executa:
+
+```bash
+python manage.py test
+```
+
+Isso ajuda a impedir que alterações que quebrem comportamentos existentes avancem na esteira.
+
+## Build Docker
+
+Após os testes, a pipeline também valida a infraestrutura utilizada nas atividades anteriores:
+
+```bash
+docker compose -f modulo13_bookstore/docker-compose.yml config
+docker build -t bookstore-ebac:ci ./modulo13_bookstore
+docker run --rm bookstore-ebac:ci python manage.py check
+```
+
+Assim, além do código Python, o processo confirma que a aplicação continua podendo ser construída e executada como imagem Docker.
+
+## Fluxo da esteira
+
+```text
+Pull Request / Push
+        |
+        v
+Code Review automatizado
+        |
+        v
+Testes automatizados
+        |
+        v
+Build e validação Docker
+```
+
+Se qualquer uma das etapas falhar, as etapas dependentes não avançam.
+
+## Checklist de Pull Request
+
+Também foi criado:
+
+```text
+.github/pull_request_template.md
+```
+
+O template inclui verificações de qualidade, testes, migrations, Docker, segurança de credenciais e retrocompatibilidade para apoiar o processo de revisão por pares.
+
+## Executar as verificações localmente
 
 Entre na pasta do projeto:
 
@@ -49,70 +92,30 @@ Entre na pasta do projeto:
 cd modulo13_bookstore
 ```
 
-Suba a aplicação e o PostgreSQL:
+Instale as dependências:
 
 ```bash
-docker compose up --build
+poetry install
 ```
 
-A API ficará disponível em:
-
-```text
-http://127.0.0.1:8000/api/products/
-```
-
-## Verificar a rede
-
-Liste as redes Docker:
+Execute o Django check:
 
 ```bash
-docker network ls
+poetry run python manage.py check
 ```
 
-Veja os containers do projeto:
+Execute os testes:
 
 ```bash
-docker compose ps
+poetry run python manage.py test
 ```
 
-Também é possível inspecionar a rede criada pelo Compose:
+Para uma análise equivalente ao Code Review automatizado:
 
 ```bash
-docker network inspect modulo13_bookstore_bookstore_network
+pip install ruff
+ruff check bookstore store
 ```
-
-O nome pode variar conforme o nome da pasta/projeto do Docker Compose, mas o driver deve ser `bridge` e os containers `web` e `db` devem aparecer conectados à mesma rede.
-
-## Testes
-
-Execute a suíte dentro do container da aplicação:
-
-```bash
-docker compose exec web python manage.py test
-```
-
-Para encerrar os serviços:
-
-```bash
-docker compose down
-```
-
-Para remover também o volume do PostgreSQL:
-
-```bash
-docker compose down -v
-```
-
-## Validação automatizada
-
-O GitHub Actions desta atividade valida automaticamente:
-
-1. a sintaxe do `docker-compose.yml`;
-2. a subida dos serviços `web` e `db`;
-3. se os dois containers estão conectados à mesma rede;
-4. se o driver da rede é `bridge`;
-5. se a aplicação responde corretamente;
-6. a execução dos testes do Django.
 
 ## Funcionalidades anteriores preservadas
 
@@ -127,4 +130,5 @@ O projeto continua com:
 - pedidos restritos ao usuário autenticado;
 - Dockerfile;
 - Docker Compose;
-- PostgreSQL em container separado.
+- PostgreSQL em container separado;
+- rede Docker explícita com driver `bridge`.
