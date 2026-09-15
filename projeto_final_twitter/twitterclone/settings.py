@@ -6,9 +6,12 @@ IS_VERCEL = any(
     os.getenv(name)
     for name in ("VERCEL", "VERCEL_ENV", "VERCEL_URL", "NOW_REGION")
 )
+PYTHONANYWHERE_USERNAME = os.getenv("PYTHONANYWHERE_USERNAME", "").strip()
+IS_PYTHONANYWHERE = bool(PYTHONANYWHERE_USERNAME)
+IS_PRODUCTION = IS_VERCEL or IS_PYTHONANYWHERE
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "twitter-clone-ebac-dev-key")
-DEBUG = os.getenv("DJANGO_DEBUG", "False" if IS_VERCEL else "True").lower() == "true"
+DEBUG = os.getenv("DJANGO_DEBUG", "False" if IS_PRODUCTION else "True").lower() == "true"
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -17,6 +20,10 @@ ALLOWED_HOSTS = [
 ]
 if IS_VERCEL and ".vercel.app" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(".vercel.app")
+if IS_PYTHONANYWHERE:
+    pythonanywhere_host = f"{PYTHONANYWHERE_USERNAME}.pythonanywhere.com"
+    if pythonanywhere_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(pythonanywhere_host)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -102,7 +109,7 @@ TIME_ZONE = "America/Recife"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STORAGES = {
@@ -114,7 +121,7 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = Path("/tmp/twitterclone-media") if IS_VERCEL else BASE_DIR / "media"
 
 LOGIN_URL = "login"
@@ -122,9 +129,12 @@ LOGIN_REDIRECT_URL = "feed"
 LOGOUT_REDIRECT_URL = "login"
 
 # Na Vercel evitamos depender da tabela django_session para páginas públicas.
-# A autenticação continua assinada e validada pelo SECRET_KEY do Django.
+# No PythonAnywhere o SQLite/PostgreSQL é persistente e usa as sessões normais do Django.
 if IS_VERCEL:
     SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+elif IS_PYTHONANYWHERE:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
@@ -147,5 +157,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 if IS_VERCEL and "https://*.vercel.app" not in CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS.append("https://*.vercel.app")
+if IS_PYTHONANYWHERE:
+    pythonanywhere_origin = f"https://{PYTHONANYWHERE_USERNAME}.pythonanywhere.com"
+    if pythonanywhere_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(pythonanywhere_origin)
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
