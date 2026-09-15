@@ -2,7 +2,10 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-IS_VERCEL = bool(os.getenv("VERCEL"))
+IS_VERCEL = any(
+    os.getenv(name)
+    for name in ("VERCEL", "VERCEL_ENV", "VERCEL_URL", "NOW_REGION")
+)
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "twitter-clone-ebac-dev-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "False" if IS_VERCEL else "True").lower() == "true"
@@ -68,6 +71,7 @@ if POSTGRES_HOST:
             "PASSWORD": os.getenv("POSTGRES_PASSWORD", "twitterclone"),
             "HOST": POSTGRES_HOST,
             "PORT": os.getenv("POSTGRES_PORT", "5432"),
+            "CONN_MAX_AGE": 60,
         }
     }
 elif IS_VERCEL:
@@ -75,6 +79,7 @@ elif IS_VERCEL:
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": "/tmp/twitterclone.sqlite3",
+            "OPTIONS": {"timeout": 20},
         }
     }
 else:
@@ -100,7 +105,17 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"
+        if IS_VERCEL
+        else "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+WHITENOISE_MANIFEST_STRICT = False
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = Path("/tmp/twitterclone-media") if IS_VERCEL else BASE_DIR / "media"
@@ -108,6 +123,13 @@ MEDIA_ROOT = Path("/tmp/twitterclone-media") if IS_VERCEL else BASE_DIR / "media
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "feed"
 LOGOUT_REDIRECT_URL = "login"
+
+# Na Vercel evitamos depender da tabela django_session para páginas públicas.
+# A autenticação continua assinada e validada pelo SECRET_KEY do Django.
+if IS_VERCEL:
+    SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
