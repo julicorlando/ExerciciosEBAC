@@ -93,6 +93,29 @@ class SocialWebTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIsNotNone(authenticate(username="julio", password="NovaSenhaForte456!"))
 
+    def test_registration_page_loads_for_anonymous_user(self):
+        self.client.logout()
+        response = self.client.get(reverse("register"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Criar sua conta")
+
+    def test_registration_web_creates_and_authenticates_user(self):
+        self.client.logout()
+        response = self.client.post(
+            reverse("register"),
+            {
+                "username": "novo_web",
+                "first_name": "Novo",
+                "last_name": "Usuário",
+                "email": "novo-web@example.com",
+                "password1": "SenhaNovaForte789!",
+                "password2": "SenhaNovaForte789!",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(User.objects.filter(username="novo_web").exists())
+        self.assertEqual(int(self.client.session["_auth_user_id"]), User.objects.get(username="novo_web").pk)
+
 
 class SocialAPITests(TestCase):
     def setUp(self):
