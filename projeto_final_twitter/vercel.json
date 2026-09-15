@@ -5,11 +5,5 @@
     "twitterclone/wsgi.py": {
       "maxDuration": 60
     }
-  },
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/twitterclone/wsgi.py"
-    }
-  ]
+  }
 }
