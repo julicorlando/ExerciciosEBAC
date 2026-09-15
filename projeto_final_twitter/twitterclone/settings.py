@@ -110,12 +110,9 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"
-        if IS_VERCEL
-        else "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
-WHITENOISE_MANIFEST_STRICT = False
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = Path("/tmp/twitterclone-media") if IS_VERCEL else BASE_DIR / "media"
