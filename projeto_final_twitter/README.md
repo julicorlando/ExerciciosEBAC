@@ -2,6 +2,24 @@
 
 Projeto final em Python/Django que implementa uma rede social de microblog inspirada no Twitter/X, com interface web integrada ao Django e API REST com Django REST Framework.
 
+## Deploy público
+
+Aplicação publicada na Vercel:
+
+```text
+https://twitter-clone-ebac-julio-jos121021-9885.vercel.app
+```
+
+Health check:
+
+```text
+https://twitter-clone-ebac-julio-jos121021-9885.vercel.app/health/
+```
+
+A aplicação utiliza o mesmo projeto Django para o front-end por templates e para o back-end/API REST.
+
+> Na Vercel, o SQLite é armazenado temporariamente em `/tmp` para fins de demonstração. O projeto também está preparado para PostgreSQL através das variáveis `POSTGRES_*`, recomendado para persistência definitiva em produção.
+
 ## Requisitos atendidos
 
 ### Autenticação e criação de conta
@@ -165,9 +183,24 @@ A suíte cobre:
 
 O GitHub Actions também executa `makemigrations --check`, `manage.py check`, todos os testes, valida o Docker Compose e constrói a imagem Docker.
 
+## Deploy na Vercel
+
+A branch do projeto final contém:
+
+- `vercel.json` com o entrypoint WSGI;
+- `.python-version` com Python 3.12;
+- `requirements.txt` para instalação das dependências;
+- `ALLOWED_HOSTS` e CSRF preparados para domínios `.vercel.app`;
+- SQLite temporário em `/tmp` quando executado no ambiente serverless;
+- execução automática das migrations no cold start;
+- WhiteNoise para arquivos estáticos;
+- rota `/health/` para validação pública do back-end.
+
+O front-end e o back-end são entregues juntos pelo Django no mesmo domínio.
+
 ## Deploy no PythonAnywhere
 
-O projeto está preparado para deploy usando WSGI.
+O projeto também está preparado para deploy usando WSGI no PythonAnywhere.
 
 1. Clone o repositório no PythonAnywhere.
 2. Entre na pasta:
