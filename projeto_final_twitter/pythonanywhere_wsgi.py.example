@@ -1,0 +1,19 @@
+import os
+import sys
+
+project_path = "/home/julicorlando/ExerciciosEBAC/projeto_final_twitter"
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "twitterclone.settings")
+os.environ.setdefault("PYTHONANYWHERE_USERNAME", "julicorlando")
+os.environ.setdefault("DJANGO_ALLOWED_HOSTS", "julicorlando.pythonanywhere.com")
+os.environ.setdefault("CSRF_TRUSTED_ORIGINS", "https://julicorlando.pythonanywhere.com")
+os.environ.setdefault("DJANGO_DEBUG", "False")
+
+# Defina DJANGO_SECRET_KEY no arquivo WSGI real do PythonAnywhere.
+# Não salve uma chave secreta verdadeira no GitHub.
+
+from django.core.wsgi import get_wsgi_application
+
+application = get_wsgi_application()

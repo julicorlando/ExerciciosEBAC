@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Editar post · Twitter Clone{% endblock %}
+{% block content %}
+<header class="page-header"><a href="{% url 'profile-detail' user.username %}">←</a><h1>Editar post</h1></header>
+<section class="form-card">
+  <form method="post" class="stack-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="primary" type="submit">Salvar</button>
+  </form>
+</section>
+{% endblock %}
