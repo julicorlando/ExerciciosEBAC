@@ -85,6 +85,13 @@ if POSTGRES_HOST:
             "PORT": os.getenv("POSTGRES_PORT", "5432"),
         }
     }
+elif IS_VERCEL:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": "/tmp/bookstore.sqlite3",
+        }
+    }
 else:
     DATABASES = {
         "default": {
