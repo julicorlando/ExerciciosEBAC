@@ -4,7 +4,7 @@ Projeto final em Python/Django que implementa uma rede social de microblog inspi
 
 ## Deploy público
 
-Aplicação publicada na Vercel:
+Aplicação:
 
 ```text
 https://twitter-clone-ebac-julio-jos121021-9885.vercel.app
@@ -16,9 +16,7 @@ Health check:
 https://twitter-clone-ebac-julio-jos121021-9885.vercel.app/health/
 ```
 
-A aplicação utiliza o mesmo projeto Django para o front-end por templates e para o back-end/API REST.
-
-> Na Vercel, o SQLite é armazenado temporariamente em `/tmp` para fins de demonstração. O projeto também está preparado para PostgreSQL através das variáveis `POSTGRES_*`, recomendado para persistência definitiva em produção.
+O front-end é renderizado por Django Templates e o back-end/API REST é executado pelo mesmo projeto Django.
 
 ## Requisitos atendidos
 
@@ -105,6 +103,20 @@ Authorization: Token SEU_TOKEN
 
 O projeto funciona com SQLite por padrão para facilitar a execução local. Quando `POSTGRES_HOST` estiver definido, o Django utiliza PostgreSQL automaticamente.
 
+Na Vercel, enquanto não houver PostgreSQL externo configurado, o SQLite utiliza `/tmp/twitterclone.sqlite3`, que é adequado apenas para demonstração temporária. Para persistência real de usuários, posts e interações em produção, configure PostgreSQL com as variáveis `POSTGRES_*`.
+
+## Arquivos estáticos na Vercel
+
+O projeto utiliza WhiteNoise com `CompressedStaticFilesStorage`. Essa configuração evita dependência de manifesto hash em runtime e corrige o erro 500 que ocorria ao renderizar páginas como `/cadastro/` quando `css/app.css` não estava presente em um manifesto previamente gerado.
+
+O `vercel.json` executa:
+
+```bash
+python manage.py collectstatic --noinput
+```
+
+antes da publicação.
+
 ## Rodar localmente
 
 ```bash
@@ -165,7 +177,7 @@ docker compose exec web python manage.py createsuperuser
 python manage.py test
 ```
 
-A suíte cobre:
+A suíte contém 16 testes e cobre:
 
 - criação automática de perfil;
 - feed somente com usuários seguidos;
@@ -176,6 +188,8 @@ A suíte cobre:
 - comentários;
 - alteração de perfil;
 - alteração de senha;
+- carregamento da página de cadastro;
+- cadastro web com autenticação automática;
 - cadastro REST;
 - feed REST;
 - proteção de autoria nos posts;
@@ -183,24 +197,9 @@ A suíte cobre:
 
 O GitHub Actions também executa `makemigrations --check`, `manage.py check`, todos os testes, valida o Docker Compose e constrói a imagem Docker.
 
-## Deploy na Vercel
-
-A branch do projeto final contém:
-
-- `vercel.json` com o entrypoint WSGI;
-- `.python-version` com Python 3.12;
-- `requirements.txt` para instalação das dependências;
-- `ALLOWED_HOSTS` e CSRF preparados para domínios `.vercel.app`;
-- SQLite temporário em `/tmp` quando executado no ambiente serverless;
-- execução automática das migrations no cold start;
-- WhiteNoise para arquivos estáticos;
-- rota `/health/` para validação pública do back-end.
-
-O front-end e o back-end são entregues juntos pelo Django no mesmo domínio.
-
 ## Deploy no PythonAnywhere
 
-O projeto também está preparado para deploy usando WSGI no PythonAnywhere.
+O projeto também permanece preparado para deploy usando WSGI no PythonAnywhere.
 
 1. Clone o repositório no PythonAnywhere.
 2. Entre na pasta:
@@ -230,13 +229,7 @@ CSRF_TRUSTED_ORIGINS=https://SEU_USUARIO.pythonanywhere.com
 7. Configure os diretórios de arquivos estáticos e mídia no painel do PythonAnywhere.
 8. Recarregue o Web App.
 
-O link final deverá seguir o formato:
-
-```text
-https://SEU_USUARIO.pythonanywhere.com
-```
-
-> A URL pública depende da conta do aluno no serviço de hospedagem. Não coloque senhas, tokens ou chaves secretas no GitHub.
+> Não coloque senhas, tokens ou chaves secretas no GitHub.
 
 ## Estrutura
 
@@ -249,5 +242,6 @@ projeto_final_twitter/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
+├── vercel.json
 └── manage.py
 ```
