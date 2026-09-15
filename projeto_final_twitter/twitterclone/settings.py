@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 IS_VERCEL = bool(os.getenv("VERCEL"))
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "twitter-clone-ebac-dev-key")
-DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
+DEBUG = os.getenv("DJANGO_DEBUG", "False" if IS_VERCEL else "True").lower() == "true"
 
 ALLOWED_HOSTS = [
     host.strip()
