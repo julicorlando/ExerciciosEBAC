@@ -4,19 +4,23 @@ Projeto final em Python/Django que implementa uma rede social de microblog inspi
 
 ## Deploy público
 
-Aplicação:
+O deploy principal será realizado no PythonAnywhere, usando a conta `julicorlando`.
+
+URL pública prevista após a ativação do Web App:
 
 ```text
-https://twitter-clone-ebac-julio-jos121021-9885.vercel.app
+https://julicorlando.pythonanywhere.com/
 ```
 
 Health check:
 
 ```text
-https://twitter-clone-ebac-julio-jos121021-9885.vercel.app/health/
+https://julicorlando.pythonanywhere.com/health/
 ```
 
 O front-end é renderizado por Django Templates e o back-end/API REST é executado pelo mesmo projeto Django.
+
+> A URL só deve ser considerada entregue quando o Web App estiver criado/recarregado no painel do PythonAnywhere e responder publicamente.
 
 ## Requisitos atendidos
 
@@ -101,21 +105,13 @@ Authorization: Token SEU_TOKEN
 
 ## Banco de dados
 
-O projeto funciona com SQLite por padrão para facilitar a execução local. Quando `POSTGRES_HOST` estiver definido, o Django utiliza PostgreSQL automaticamente.
+O projeto funciona com SQLite por padrão. No PythonAnywhere, o SQLite fica em:
 
-Na Vercel, enquanto não houver PostgreSQL externo configurado, o SQLite utiliza `/tmp/twitterclone.sqlite3`, que é adequado apenas para demonstração temporária. Para persistência real de usuários, posts e interações em produção, configure PostgreSQL com as variáveis `POSTGRES_*`.
-
-## Arquivos estáticos na Vercel
-
-O projeto utiliza WhiteNoise com `CompressedStaticFilesStorage`. Essa configuração evita dependência de manifesto hash em runtime e corrige o erro 500 que ocorria ao renderizar páginas como `/cadastro/` quando `css/app.css` não estava presente em um manifesto previamente gerado.
-
-O `vercel.json` executa:
-
-```bash
-python manage.py collectstatic --noinput
+```text
+/home/julicorlando/ExerciciosEBAC/projeto_final_twitter/db.sqlite3
 ```
 
-antes da publicação.
+Esse arquivo é persistente no filesystem da conta e é suficiente para a entrega acadêmica. Se `POSTGRES_HOST` estiver definido, o Django utiliza PostgreSQL automaticamente.
 
 ## Rodar localmente
 
@@ -177,57 +173,163 @@ docker compose exec web python manage.py createsuperuser
 python manage.py test
 ```
 
-A suíte contém 16 testes e cobre:
-
-- criação automática de perfil;
-- feed somente com usuários seguidos;
-- seguir e deixar de seguir;
-- bloqueio de auto-follow;
-- CRUD de posts;
-- curtidas;
-- comentários;
-- alteração de perfil;
-- alteração de senha;
-- carregamento da página de cadastro;
-- cadastro web com autenticação automática;
-- cadastro REST;
-- feed REST;
-- proteção de autoria nos posts;
-- interações via API.
+A suíte cobre cadastro, autenticação, criação automática de perfil, seguidores, feed, CRUD de posts, curtidas, comentários, alteração de perfil, alteração de senha, API REST e proteção de autoria.
 
 O GitHub Actions também executa `makemigrations --check`, `manage.py check`, todos os testes, valida o Docker Compose e constrói a imagem Docker.
 
-## Deploy no PythonAnywhere
+## Deploy principal no PythonAnywhere — usuário `julicorlando`
 
-O projeto também permanece preparado para deploy usando WSGI no PythonAnywhere.
+### 1. Clonar o projeto
 
-1. Clone o repositório no PythonAnywhere.
-2. Entre na pasta:
+Abra uma **Bash console** no PythonAnywhere e execute:
 
 ```bash
-cd ExerciciosEBAC/projeto_final_twitter
+cd ~
+git clone -b projeto-final-twitter-clone https://github.com/julicorlando/ExerciciosEBAC.git
+cd ~/ExerciciosEBAC/projeto_final_twitter
 ```
 
-3. Crie e ative o virtualenv e instale as dependências.
-4. Execute:
+Se o repositório já existir:
 
 ```bash
+cd ~/ExerciciosEBAC
+git fetch origin
+git checkout projeto-final-twitter-clone
+git pull origin projeto-final-twitter-clone
+cd projeto_final_twitter
+```
+
+### 2. Criar o virtualenv
+
+Use Python 3.12 para combinar com o projeto:
+
+```bash
+mkvirtualenv --python=python3.12 twitterclone
+pip install -r requirements.txt
+```
+
+Em novos consoles, ative com:
+
+```bash
+workon twitterclone
+```
+
+### 3. Preparar banco e arquivos estáticos
+
+```bash
+cd ~/ExerciciosEBAC/projeto_final_twitter
 python manage.py migrate
 python manage.py collectstatic --noinput
+python manage.py check
 ```
 
-5. Configure o Web App como `Manual configuration` e use o arquivo `pythonanywhere_wsgi.py.example` como referência.
-6. Configure as variáveis:
+Opcionalmente crie um administrador:
+
+```bash
+python manage.py createsuperuser
+```
+
+### 4. Gerar uma SECRET_KEY
+
+Na Bash console:
+
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+Copie o valor gerado. Não salve a chave no GitHub.
+
+### 5. Criar o Web App
+
+No painel do PythonAnywhere:
+
+1. Abra **Web**.
+2. Clique em **Add a new web app**.
+3. Escolha `julicorlando.pythonanywhere.com`.
+4. Selecione **Manual configuration**.
+5. Escolha a mesma versão de Python usada no virtualenv, preferencialmente Python 3.12.
+
+No campo **Virtualenv**, informe:
 
 ```text
-DJANGO_SECRET_KEY=<chave forte>
-DJANGO_DEBUG=False
-DJANGO_ALLOWED_HOSTS=SEU_USUARIO.pythonanywhere.com
-CSRF_TRUSTED_ORIGINS=https://SEU_USUARIO.pythonanywhere.com
+/home/julicorlando/.virtualenvs/twitterclone
 ```
 
-7. Configure os diretórios de arquivos estáticos e mídia no painel do PythonAnywhere.
-8. Recarregue o Web App.
+### 6. Configurar o WSGI
+
+Abra o arquivo WSGI indicado na aba **Web**, apague o conteúdo e use:
+
+```python
+import os
+import sys
+
+project_path = "/home/julicorlando/ExerciciosEBAC/projeto_final_twitter"
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+
+os.environ["DJANGO_SETTINGS_MODULE"] = "twitterclone.settings"
+os.environ["PYTHONANYWHERE_USERNAME"] = "julicorlando"
+os.environ["DJANGO_ALLOWED_HOSTS"] = "julicorlando.pythonanywhere.com"
+os.environ["CSRF_TRUSTED_ORIGINS"] = "https://julicorlando.pythonanywhere.com"
+os.environ["DJANGO_DEBUG"] = "False"
+os.environ["DJANGO_SECRET_KEY"] = "COLE_AQUI_A_CHAVE_GERADA_NO_PASSO_4"
+
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+```
+
+### 7. Configurar Static Files
+
+Na aba **Web > Static files**, crie:
+
+```text
+URL:  /static/
+Path: /home/julicorlando/ExerciciosEBAC/projeto_final_twitter/staticfiles
+```
+
+Para uploads de foto de perfil, crie também:
+
+```text
+URL:  /media/
+Path: /home/julicorlando/ExerciciosEBAC/projeto_final_twitter/media
+```
+
+### 8. Recarregar e validar
+
+Clique em **Reload** na aba Web e teste:
+
+```text
+https://julicorlando.pythonanywhere.com/
+https://julicorlando.pythonanywhere.com/cadastro/
+https://julicorlando.pythonanywhere.com/login/
+https://julicorlando.pythonanywhere.com/health/
+```
+
+O `/health/` deve responder:
+
+```json
+{"status":"ok","project":"twitter-clone"}
+```
+
+Se houver erro, consulte na aba Web o **Error log** e use o traceback para corrigir a causa.
+
+## Atualização futura do deploy
+
+Depois que o Web App estiver configurado, uma atualização pode ser publicada com:
+
+```bash
+cd ~/ExerciciosEBAC
+git checkout projeto-final-twitter-clone
+git pull origin projeto-final-twitter-clone
+workon twitterclone
+cd projeto_final_twitter
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py collectstatic --noinput
+python manage.py check
+```
+
+Depois clique em **Reload** no PythonAnywhere.
 
 > Não coloque senhas, tokens ou chaves secretas no GitHub.
 
@@ -242,6 +344,7 @@ projeto_final_twitter/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
-├── vercel.json
+├── pythonanywhere_wsgi.py.example
+├── vercel.json             # alternativa de deploy, não é o alvo principal
 └── manage.py
 ```
