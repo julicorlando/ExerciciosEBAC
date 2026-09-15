@@ -2,14 +2,18 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+IS_VERCEL = bool(os.getenv("VERCEL"))
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "twitter-clone-ebac-dev-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
+
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if host.strip()
 ]
+if IS_VERCEL and ".vercel.app" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".vercel.app")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -66,6 +70,13 @@ if POSTGRES_HOST:
             "PORT": os.getenv("POSTGRES_PORT", "5432"),
         }
     }
+elif IS_VERCEL:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": "/tmp/twitterclone.sqlite3",
+        }
+    }
 else:
     DATABASES = {
         "default": {
@@ -92,7 +103,7 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = Path("/tmp/twitterclone-media") if IS_VERCEL else BASE_DIR / "media"
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "feed"
@@ -115,3 +126,7 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+if IS_VERCEL and "https://*.vercel.app" not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append("https://*.vercel.app")
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
