@@ -1,0 +1,55 @@
+name: Módulo 21 - Continuous Delivery PythonAnywhere
+
+on:
+  push:
+    branches:
+      - main
+      - modulo21-continuous-delivery-pythonanywhere
+  pull_request:
+    paths:
+      - "modulo13_bookstore/**"
+      - ".github/workflows/modulo21-continuous-delivery.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validar projeto para deploy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: modulo13_bookstore
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Poetry
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+
+      - name: Instalar dependências
+        run: poetry install --no-interaction
+
+      - name: Verificar migrations pendentes
+        run: poetry run python manage.py makemigrations --check --dry-run
+
+      - name: Django system check
+        run: poetry run python manage.py check
+
+      - name: Executar testes
+        run: poetry run python manage.py test
+
+      - name: Validar configuração de produção
+        env:
+          DJANGO_DEBUG: "0"
+          PYTHONANYWHERE_HOST: exemplo.pythonanywhere.com
+          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+        run: poetry run python manage.py check --deploy

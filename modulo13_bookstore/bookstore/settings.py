@@ -3,12 +3,27 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "ebac-modulo13-bookstore-dev"
-DEBUG = True
-ALLOWED_HOSTS = os.getenv(
-    "DJANGO_ALLOWED_HOSTS",
-    "localhost,127.0.0.1,web",
-).split(",")
+IS_VERCEL = os.getenv("VERCEL") == "1"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "ebac-modulo13-bookstore-dev")
+DEBUG = os.getenv("DJANGO_DEBUG", "0" if IS_VERCEL else "1").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv(
+        "DJANGO_ALLOWED_HOSTS",
+        "localhost,127.0.0.1,web,.vercel.app",
+    ).split(",")
+    if host.strip()
+]
+
+pythonanywhere_host = os.getenv("PYTHONANYWHERE_HOST", "").strip()
+if pythonanywhere_host and pythonanywhere_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(pythonanywhere_host)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -19,27 +34,31 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
-    "debug_toolbar",
     "store",
 ]
+
+if DEBUG:
+    INSTALLED_APPS.append("debug_toolbar")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+if DEBUG:
+    MIDDLEWARE.insert(3, "debug_toolbar.middleware.DebugToolbarMiddleware")
+
 ROOT_URLCONF = "bookstore.urls"
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "bookstore" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -66,6 +85,13 @@ if POSTGRES_HOST:
             "PORT": os.getenv("POSTGRES_PORT", "5432"),
         }
     }
+elif IS_VERCEL:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": "/tmp/bookstore.sqlite3",
+        }
+    }
 else:
     DATABASES = {
         "default": {
@@ -82,9 +108,16 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 INTERNAL_IPS = ["127.0.0.1"]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "store.pagination.BookstorePagination",
