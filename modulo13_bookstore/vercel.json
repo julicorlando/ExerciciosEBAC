@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "bookstore/wsgi.py": {
+      "maxDuration": 60
+    }
+  }
+}
