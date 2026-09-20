@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}@{{ profile_user.username }} · Twitter Clone{% endblock %}
+{% block content %}
+<header class="page-header"><a href="{% url 'feed' %}">←</a><div><h1>{{ profile_user.get_full_name|default:profile_user.username }}</h1><span class="muted">{{ posts|length }} post{{ posts|length|pluralize }}</span></div></header>
+<section class="profile-card">
+  <div class="profile-top">
+    {% if profile_user.profile.avatar %}<img class="avatar large" src="{{ profile_user.profile.avatar.url }}" alt="Foto de {{ profile_user.username }}">{% else %}<div class="avatar large placeholder">{{ profile_user.username|first|upper }}</div>{% endif %}
+    {% if profile_user == user %}
+      <a class="outline button-link" href="{% url 'profile-edit' %}">Editar perfil</a>
+    {% else %}
+      <form method="post" action="{% url 'toggle-follow' profile_user.username %}">{% csrf_token %}<button class="{% if is_following %}outline{% else %}primary{% endif %}" type="submit">{% if is_following %}Deixar de seguir{% else %}Seguir{% endif %}</button></form>
+    {% endif %}
+  </div>
+  <h2>{{ profile_user.get_full_name|default:profile_user.username }}</h2>
+  <p class="muted">@{{ profile_user.username }}</p>
+  {% if profile_user.profile.bio %}<p>{{ profile_user.profile.bio }}</p>{% endif %}
+  <div class="follow-counts"><a href="{% url 'following-list' profile_user.username %}"><strong>{{ following_count }}</strong> Seguindo</a><a href="{% url 'followers-list' profile_user.username %}"><strong>{{ followers_count }}</strong> Seguidores</a></div>
+</section>
+
+<section class="timeline">
+  {% for post in posts %}
+    <article class="post-card">
+      <div class="avatar-wrap">
+        {% if profile_user.profile.avatar %}<img class="avatar" src="{{ profile_user.profile.avatar.url }}" alt="Foto">{% else %}<div class="avatar placeholder">{{ profile_user.username|first|upper }}</div>{% endif %}
+      </div>
+      <div class="post-body">
+        <div class="post-meta"><strong>{{ profile_user.get_full_name|default:profile_user.username }}</strong> <span>@{{ profile_user.username }} · {{ post.created_at|timesince }}</span></div>
+        <p class="post-content">{{ post.content }}</p>
+        <div class="post-actions">
+          <form action="{% url 'toggle-like' post.pk %}" method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="action-button" type="submit">♥ {{ post.like_count }}</button></form>
+          <span>💬 {{ post.comments.count }}</span>
+          {% if profile_user == user %}<a href="{% url 'post-edit' post.pk %}">Editar</a><form action="{% url 'post-delete' post.pk %}" method="post" onsubmit="return confirm('Excluir este post?')">{% csrf_token %}<button class="danger-link" type="submit">Excluir</button></form>{% endif %}
+        </div>
+        <div class="comments">
+          {% for comment in post.comments.all %}<p><a href="{% url 'profile-detail' comment.author.username %}"><strong>@{{ comment.author.username }}</strong></a> {{ comment.content }}</p>{% endfor %}
+          <form action="{% url 'add-comment' post.pk %}" method="post" class="comment-form">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">{{ comment_form.content }}<button type="submit">Responder</button></form>
+        </div>
+      </div>
+    </article>
+  {% empty %}
+    <div class="empty-state"><p>Este usuário ainda não publicou nada.</p></div>
+  {% endfor %}
+</section>
+{% endblock %}

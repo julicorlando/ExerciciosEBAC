@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Início · Twitter Clone{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1>Início</h1>
+  <span class="muted">Seguindo {{ following_count }} pessoa{{ following_count|pluralize }}</span>
+</header>
+
+<section class="composer">
+  <div class="avatar-wrap">
+    {% if user.profile.avatar %}<img class="avatar" src="{{ user.profile.avatar.url }}" alt="Foto de {{ user.username }}">{% else %}<div class="avatar placeholder">{{ user.username|first|upper }}</div>{% endif %}
+  </div>
+  <form action="{% url 'post-create' %}" method="post" class="composer-form">
+    {% csrf_token %}
+    {{ post_form.content }}
+    <div class="composer-actions"><span>Até 280 caracteres</span><button class="primary small" type="submit">Postar</button></div>
+  </form>
+</section>
+
+{% if posts %}
+  <section class="timeline">
+    {% for post in posts %}
+      <article class="post-card">
+        <div class="avatar-wrap">
+          {% if post.author.profile.avatar %}<img class="avatar" src="{{ post.author.profile.avatar.url }}" alt="Foto de {{ post.author.username }}">{% else %}<div class="avatar placeholder">{{ post.author.username|first|upper }}</div>{% endif %}
+        </div>
+        <div class="post-body">
+          <div class="post-meta"><a href="{% url 'profile-detail' post.author.username %}"><strong>{{ post.author.get_full_name|default:post.author.username }}</strong></a> <span>@{{ post.author.username }} · {{ post.created_at|timesince }}</span></div>
+          <p class="post-content">{{ post.content }}</p>
+          <div class="post-actions">
+            <form action="{% url 'toggle-like' post.pk %}" method="post">{% csrf_token %}<input type="hidden" name="next" value="{% url 'feed' %}"><button class="action-button" type="submit">♥ {{ post.like_count }}</button></form>
+            <span>💬 {{ post.comments.count }}</span>
+          </div>
+          <div class="comments">
+            {% for comment in post.comments.all %}
+              <p><a href="{% url 'profile-detail' comment.author.username %}"><strong>@{{ comment.author.username }}</strong></a> {{ comment.content }}</p>
+            {% endfor %}
+            <form action="{% url 'add-comment' post.pk %}" method="post" class="comment-form">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{% url 'feed' %}">
+              {{ comment_form.content }}
+              <button type="submit">Responder</button>
+            </form>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="empty-state">
+    <h2>Seu feed ainda está vazio</h2>
+    <p>O feed mostra somente publicações de pessoas que você segue.</p>
+    <a class="primary button-link" href="{% url 'user-list' %}">Encontrar pessoas</a>
+  </section>
+{% endif %}
+{% endblock %}

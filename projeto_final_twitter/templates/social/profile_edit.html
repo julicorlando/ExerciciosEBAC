@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Editar perfil · Twitter Clone{% endblock %}
+{% block content %}
+<header class="page-header"><a href="{% url 'profile-detail' user.username %}">←</a><h1>Editar perfil</h1></header>
+<section class="form-card">
+  <p class="muted">Altere somente os campos que desejar. Nenhuma mudança é obrigatória.</p>
+  <form method="post" enctype="multipart/form-data" class="stack-form">
+    {% csrf_token %}
+    <h2>Dados pessoais</h2>
+    {{ user_form.as_p }}
+    <h2>Perfil</h2>
+    {{ profile_form.as_p }}
+    <button class="primary" type="submit">Salvar alterações</button>
+  </form>
+  <a class="outline button-link block" href="{% url 'change-password' %}">Alterar senha</a>
+</section>
+{% endblock %}
